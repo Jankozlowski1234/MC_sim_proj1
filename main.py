@@ -2,6 +2,8 @@ from numba import jit
 import numpy as np
 
 
+#generators
+
 @jit
 def GLCG(n,M=2**10,As=np.array([3,7,68]),Xs = np.array([1,2,4])):
     k = len(Xs)
@@ -73,7 +75,7 @@ def Marsagli(Xs,n = 10000,m = 2**32,p1 = 55,p2 = 119,p3 = 179,p4 = 256):
     return X[k:]
 
 
-
+## tests
 
 
 
