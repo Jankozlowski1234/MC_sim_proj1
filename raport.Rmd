@@ -1,0 +1,232 @@
+---
+title: "Pierwszy raport z symulacji Monte Carlo"
+author: "Jan Kozłowski"
+date: "19-12-2024"
+output: 
+  pdf_document:
+    extra_dependencies: ["amsmath","dsfont","xcolor"]
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{dsfont}
+urlcolor: blue
+
+---
+
+
+```{r setup, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+setwd("C:/Users/jaako/Desktop/studia/Monte Carlo/MC_sim_proj1")
+library(ggplot2)
+library(kableExtra)
+
+second_level_p_value<-function(p_val){
+  n<-length(p_val)
+  parts<-seq(0,1,0.1)
+  R<-replicate(10,0.1*n)
+  ilosc_w_przedzialach<-sapply(1:10, function(i){
+    sum(p_val>=parts[i]&p_val<parts[i+1])
+  })
+  1-pchisq(sum((ilosc_w_przedzialach-R)^2/R),9)
+}
+
+
+
+dane<-read.csv('wyniki_zad1.csv',header = T)
+
+dane$P.value<-as.numeric(dane$P.value)
+dane$n<-as.numeric(dane$n)
+
+
+```
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+narysuj_zad_2<-function(dane2){
+  dane2$P.value <-as.numeric(dane2$P.value)
+  dane2$n <-as.numeric(dane2$n)
+  n <-dane2$n[1]
+  
+  p<-ggplot(dane2,aes(x   = P.value,fill = Liczba,col = Liczba))+
+    geom_histogram(position = "identity",binwidth = 0.02)+facet_wrap(~Liczba)+
+    theme(legend.position = "bottom",plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))+ 
+    labs(title = "Histogtamy p_wartosci dla różnych liczb",
+         subtitle = paste("dla n =",n),
+         x="P_wartość",y="")
+  
+  p_val<-data.frame(matrix(ncol = 3,nrow = 1))
+  colnames(p_val)<-c("Pi","e","sqrt2")
+  p_val[1]<-second_level_p_value(subset(dane2,dane2$Liczba =="Pi")$P.value)
+  p_val[2]<-second_level_p_value(subset(dane2,dane2$Liczba =="e")$P.value)
+  p_val[3]<-second_level_p_value(subset(dane2,dane2$Liczba =="sqrt2")$P.value)
+  print(p)
+  
+  return(p_val)
+}
+```
+
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+
+
+p_values_second<-data.frame(matrix(ncol = 4, nrow = 4))
+
+p_values_second[1,1]<-second_level_p_value(subset(dane,dane$Test=="KS"&
+                                                    dane$Generator=="GLCG")$P.value)
+p_values_second[2,1]<-second_level_p_value(subset(dane,dane$Test=="Chi"&
+                                                    dane$Generator=="GLCG")$P.value)
+p_values_second[3,1]<-second_level_p_value(subset(dane,dane$Test=="poker"&
+                                                    dane$Generator=="GLCG")$P.value)
+p_values_second[4,1]<-second_level_p_value(subset(dane,dane$Test=="Furier"&
+                                                    dane$Generator=="GLCG")$P.value)
+
+p_values_second[1,2]<-second_level_p_value(subset(dane,dane$Test=="KS"&
+                                                    dane$Generator=="RC")$P.value)
+p_values_second[2,2]<-second_level_p_value(subset(dane,dane$Test=="Chi"&
+                                                    dane$Generator=="RC")$P.value)
+p_values_second[3,2]<-second_level_p_value(subset(dane,dane$Test=="poker"&
+                                                    dane$Generator=="RC")$P.value)
+p_values_second[4,2]<-second_level_p_value(subset(dane,dane$Test=="Furier"&
+                                                    dane$Generator=="RC")$P.value)
+
+p_values_second[1,3]<-second_level_p_value(subset(dane,dane$Test=="KS"&
+                                                    dane$Generator=="Marsagli")$P.value)
+p_values_second[2,3]<-second_level_p_value(subset(dane,dane$Test=="Chi"&
+                                                    dane$Generator=="Marsagli")$P.value)
+p_values_second[3,3]<-second_level_p_value(subset(dane,dane$Test=="poker"&
+                                                    dane$Generator=="Marsagli")$P.value)
+p_values_second[4,3]<-second_level_p_value(subset(dane,dane$Test=="Furier"&
+                                                    dane$Generator=="Marsagli")$P.value)
+
+p_values_second[1,4]<-second_level_p_value(subset(dane,dane$Test=="KS"&
+                                                    dane$Generator=="Ziff")$P.value)
+p_values_second[2,4]<-second_level_p_value(subset(dane,dane$Test=="Chi"&
+                                                    dane$Generator=="Ziff")$P.value)
+p_values_second[3,4]<-second_level_p_value(subset(dane,dane$Test=="poker"&
+                                                    dane$Generator=="Ziff")$P.value)
+p_values_second[4,4]<-second_level_p_value(subset(dane,dane$Test=="Furier"&
+                                                    dane$Generator=="Ziff")$P.value)
+
+
+colnames(p_values_second)<-c("GLCG","RC(32)","Marsagli","Ziff")
+rownames(p_values_second)<-c("KS","Chi","Poker","Fourier")
+
+```
+
+
+\begin{center}
+ \textbf{Wprowadzenie}
+\end{center}
+Celem tego projektu jest opisanie i zbadanie różnych generatorów liczb pseudolosowych, oraz testów, które będą sprawdzać "jakość" tych generatorów. Raport zaczniemy od napisiania algorytmów 4 generatorów, $\text{GLCG}$, $\text{RC4}$, $\text{Marsa-LFIB4}$ oraz $\text{Ziff98}$, następnie opisanie 4 testów: Kołmogorowa-Smirnowa, $\chi^2$, testu pokerowego i dyskretnego testu transformaty Fouriera(Discrete Fourier Transform (Spectral) Test)
+\begin{center}
+ \textbf{Generatory}
+\end{center}
+\begin{center}
+ \textbf{GLCG}
+\end{center}
+
+Pierwszym generatorem jest $\text{GLCG}(M,\{a_i\}_{i=1}^k)$, który przyjmuje trzy parametry: liczbę $M$, ciąg współczynników $\{a_i\}_{i=1}^k$, oraz wartość początkową, która w tym przypadku jest ciągiem $k$ elementowym:$\{x_i\}_{i=0}^{k-1}$, kolejne wyrazy obliczamy rekurencyjnie: 
+$$x_n = \sum_{i = 1}^ka_ix_{n-i}\quad modM,$$
+
+W przykładach będziemy używać parametrów $M = 2^{10}$, $k = 3$, $\{a_i\}_{i=1}^k = (3,7,68)$ oraz $\{x_i\}_{i=1}^k = (1,2,5)$
+
+
+\begin{center}
+ \textbf{Generator Fibonacciego}
+\end{center}
+
+Patrząc na wzór rekurencyjny generatora $\text{GLCG}$ możemy zauważyć, że jego wadą będzie duża korelacja pomiędzy kolejnymi zmiennymi. Jendym z możliwości poprawy tej własności jest zwiększenie rekurencji tzn. zamiast olbiczać $n$-ty wyraz za pomocią wyrazów $n-1,n-2,\dots,n-i$ będziemy używać wyrazów $n-q_1,n-q_2,\dots,n-q_i$, gdzie liczby $q_j$ są "duże". Dodatkowo, jako że ostatnim dziłaniem rekurencji jest wzięcie reszty dzielenia przez $M$, to działanie, jakie wykonujemy pomiędzy $x_j$ nie musi być dodawanie, więc nasza rekurencja będzie miałą wtedy postać:
+
+$$x_n = x_{n-q_1}\diamond x_{n-q_2}\diamond \dots x_{n-q_k} \quad modM,$$
+gdzie $\diamond$ jest pewnym działaniem w liczbach całkowitych.
+
+ 
+ 
+ \begin{center}
+ \textbf{RC(32)}
+\end{center}
+
+
+\begin{center}
+ \textbf{Testy}
+\end{center}
+
+\begin{center}
+ \textbf{Test Kołmogorowa-Smirnowa}
+\end{center}
+
+Test Kołmogorowa-Smirnowa używamy do porównywania dystrybuant. Zacznijmy od postawienia hioptezy $H_0$: nasze liczby pochodzą z rozkładu o dystrybuancie $F$ vs. $H_1$: nasze liczby nie pochodzą z tego rozkłady. Na początku mając ciąg liczb $X_1,X_2,\dots,X_n$ liczymy dystrybuantę empiryczną:
+
+$$\hat{F_n}(x) = \frac{1}{n}\sum_{i=1}^n\mathds{1}(X_n\leq x).$$
+Zakłądając prawdziwośc $H_0$ wiemy, że $\hat{F}_n$ dąży z $n$ do $F$, dodatkowo można policzyć, że statystyka
+$$\hat{D}_n = \sqrt{2}\sup_{x\in\mathbb{R}}|F_n(x)-F(x)|,$$
+ma w granicy znany rozkład
+
+$$$$
+
+
+\begin{center}
+ \textbf{Testy Chi-kwadrat}
+\end{center}
+
+
+
+\begin{center}
+ \textbf{Test pokerowy}
+\end{center}
+
+
+\begin{center}
+ \textbf{Dyskretny test transformaty Fouriera}
+\end{center}
+
+\begin{center}
+ \textbf{Second level testing}
+\end{center}
+
+
+ 
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(dane,aes(x = P.value,fill = Test,col = Test))+
+  geom_histogram(position = "identity",alpha = 0.5)+facet_wrap(~Generator)+
+  theme(legend.position = "bottom",plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+ 
+  labs(title = "Histogtamy p_wartosci dla różnych testów",
+       subtitle = "i różnych generatorów",
+       x="P_wartość",y="")
+```
+
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+kable(p_values_second)
+```
+
+\begin{center}
+ \textbf{Project 2}
+\end{center}
+ 
+
+
+
+ 
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+dane2<-read.csv('wyniki_zad2_n_1000.csv',header = T)
+r<-narysuj_zad_2(dane2)
+
+kable(r)
+```
+ 
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+dane2<-read.csv('wyniki_zad2_n_5000.csv',header = T)
+r<-narysuj_zad_2(dane2)
+
+kable(r)
+```
+
+ 
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+
+```
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+
+```
+
