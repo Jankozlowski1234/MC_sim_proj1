@@ -98,15 +98,3 @@ narysuj_zad_2<-function(dane2){
 dane2<-read.csv('wyniki_zad2_n_5000.csv',header = T)
 r<-narysuj_zad_2(dane2)
 
-print(r)
-
-
-
-
-
-dane3<-read.csv('czy_uni.csv',header = T)
-dane3$P.value<-as.numeric(dane3$P.value)
-
-hist(dane3$P.value)
-unique(dane3$P.value)
-second_level_p_value(dane3$P.value)

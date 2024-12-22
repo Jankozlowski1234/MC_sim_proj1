@@ -258,7 +258,7 @@ def read_numbers_and_save_p_values(n = 5000):
     df = pd.concat([df_pi, df_e,df_sqrt2], ignore_index=True)
     df.to_csv('wyniki_zad2_n_5000.csv', index=False)
 
-read_numbers_and_save_p_values(n = 5000)
+#read_numbers_and_save_p_values(n = 5000)
 
 ###generowanie wynikow zad 1
 
@@ -305,13 +305,5 @@ def policz_i_zapisz_wyniki_zad1(n = 100,k = 100):
     df.to_csv('wyniki_zad1.csv', index=False)
 
 
-#policz_i_zapisz_wyniki_zad1()
+#   policz_i_zapisz_wyniki_zad1(n = 1000,k = 1000)
 
-df = pd.DataFrame()
-for _ in range(1000):
-    s = np.random.binomial(1, 0.5, 1000)
-    p = Furier_test(s)
-    new_row = pd.DataFrame({"P-value": [p]})
-    df = pd.concat([df, new_row], ignore_index=True)
-
-df.to_csv('czy_uni.csv', index=False)

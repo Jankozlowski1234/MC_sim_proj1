@@ -5,9 +5,11 @@ date: "19-12-2024"
 output: 
   pdf_document:
     extra_dependencies: ["amsmath","dsfont","xcolor"]
+    fig_caption: yes
 header-includes:
 - \usepackage{booktabs}
 - \usepackage{dsfont}
+- \usepackage{float}
 urlcolor: blue
 
 ---
@@ -39,7 +41,7 @@ dane$n<-as.numeric(dane$n)
 ```
 
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
-narysuj_zad_2<-function(dane2){
+narysuj_zad_2<-function(dane2,l){
   dane2$P.value <-as.numeric(dane2$P.value)
   dane2$n <-as.numeric(dane2$n)
   n <-dane2$n[1]
@@ -50,7 +52,8 @@ narysuj_zad_2<-function(dane2){
           plot.subtitle = element_text(hjust = 0.5))+ 
     labs(title = "Histogtamy p_wartosci dla różnych liczb",
          subtitle = paste("dla n =",n),
-         x="P_wartość",y="")
+         x="P_wartość",y="")+
+           labs(caption = paste("Wykres ",l))
   
   p_val<-data.frame(matrix(ncol = 3,nrow = 1))
   colnames(p_val)<-c("Pi","e","sqrt2")
@@ -116,18 +119,6 @@ rownames(p_values_second)<-c("KS","Chi","Poker","Fourier")
  \textbf{Wprowadzenie}
 \end{center}
 Celem tego projektu jest opisanie i zbadanie różnych generatorów liczb pseudolosowych, oraz testów, które będą sprawdzać "jakość" tych generatorów. Raport zaczniemy od napisiania algorytmów 4 generatorów, $\text{GLCG}$, $\text{RC4}$, $\text{Marsa-LFIB4}$ oraz $\text{Ziff98}$, następnie opisanie 4 testów: Kołmogorowa-Smirnowa, $\chi^2$, testu pokerowego i dyskretnego testu transformaty Fouriera(Discrete Fourier Transform (Spectral) Test)
-\begin{center}
- \textbf{Generatory}
-\end{center}
-\begin{center}
- \textbf{GLCG}
-\end{center}
-
-Pierwszym generatorem jest $\text{GLCG}(M,\{a_i\}_{i=1}^k)$, który przyjmuje trzy parametry: liczbę $M$, ciąg współczynników $\{a_i\}_{i=1}^k$, oraz wartość początkową, która w tym przypadku jest ciągiem $k$ elementowym:$\{x_i\}_{i=0}^{k-1}$, kolejne wyrazy obliczamy rekurencyjnie: 
-$$x_n = \sum_{i = 1}^ka_ix_{n-i}\quad modM,$$
-
-W przykładach będziemy używać parametrów $M = 2^{10}$, $k = 3$, $\{a_i\}_{i=1}^k = (3,7,68)$ oraz $\{x_i\}_{i=1}^k = (1,2,5)$
-
 
 \begin{center}
  \textbf{Generator Fibonacciego}
@@ -137,52 +128,56 @@ Patrząc na wzór rekurencyjny generatora $\text{GLCG}$ możemy zauważyć, że 
 
 $$x_n = x_{n-q_1}\diamond x_{n-q_2}\diamond \dots x_{n-q_k} \quad modM,$$
 gdzie $\diamond$ jest pewnym działaniem w liczbach całkowitych.
+Stąd dostajemy dwa możliwe generatory:\newline
+-generator Marsagli:$k = 4$, $p_1 = 55,p_2 = 119,p_3 = 179,p_4 = 256,M = 2^{10},\diamond = +$, \newline
+-generator Ziffa:$k = 4$, $p_1 = 471,p_2 = 1586,p_3 = 6988,p_4 = 9689,M = 2^{10},\diamond = xor$,\newline
 
+gdzie operator $xor$ dla dwóch liczb to zamienienie ich na postać binarną i nałożenie $xor$ na każdą parę bitów.
  
- 
- \begin{center}
- \textbf{RC(32)}
-\end{center}
+W przykładach będziemy używać dla generatora $GLCG$ parametrów $M = 2^{10}$, $k = 3$, $\{a_i\}_{i=1}^k = (3,7,68)$ oraz $\{x_i\}_{i=1}^k = (1,2,5)$,
 
+Dla generatora $RC(32)$ będziemy używać parametrów $M = 2^5$,$K = (2,3,4,7)$,
 
-\begin{center}
- \textbf{Testy}
-\end{center}
-
-\begin{center}
- \textbf{Test Kołmogorowa-Smirnowa}
-\end{center}
-
-Test Kołmogorowa-Smirnowa używamy do porównywania dystrybuant. Zacznijmy od postawienia hioptezy $H_0$: nasze liczby pochodzą z rozkładu o dystrybuancie $F$ vs. $H_1$: nasze liczby nie pochodzą z tego rozkłady. Na początku mając ciąg liczb $X_1,X_2,\dots,X_n$ liczymy dystrybuantę empiryczną:
-
-$$\hat{F_n}(x) = \frac{1}{n}\sum_{i=1}^n\mathds{1}(X_n\leq x).$$
-Zakłądając prawdziwośc $H_0$ wiemy, że $\hat{F}_n$ dąży z $n$ do $F$, dodatkowo można policzyć, że statystyka
-$$\hat{D}_n = \sqrt{2}\sup_{x\in\mathbb{R}}|F_n(x)-F(x)|,$$
-ma w granicy znany rozkład
-
-$$$$
-
-
-\begin{center}
- \textbf{Testy Chi-kwadrat}
-\end{center}
-
+Generatory Ziffa i Marsagli wymagają długiej listy parametrów $x_1,\dots,x_{q_{k}}$, więc do jej stworzenia użyjemy generatora $GLCG$.
 
 
 \begin{center}
  \textbf{Test pokerowy}
 \end{center}
 
-
+W tym teście będziemy dzielić nasz ciąg liczb $X_1,\dots,X_{5n}$ na podciągi długości 5 i badać ile jest w danym podciągu różnych liczb. Zapiszmy to jako $Y_1,\dots, Y_n$, teraz będziemy chcieli na tym wektorze przeprowadzić test $\chi^2$, więc jedynym, co nam zostaje do policzenia są prawdopodobieństwa $p_s = P[Y_i = s]$. 
+Prawdopodobieństwo, że losując pięciokrotnie ze zbioru od 1 do $M$ otrzymamy dokładnie $s$ różnych liczb wynosi 
+$$\frac{M(M-1)\dots(M-s+1)}{M^5}S_2(5,s)$$
+gdzie $S_2(5,s)$ oznacza liczbę podziału zbioru 5-elementowego na $s$ niepustych podzbiorów. Można policzyć, że 
+$S_2(5, 1) = 1, S_2(5, 2) = 15, S_2(5, 3) = 25, S_2(5, 4) = 10, S_2(5, 5) = 1$.
+Mając to, możemy policzyć 
+$$O_s = \#\{i:Y_i = s\}.$$
+Wtedy statystyka 
+$$\hat{\chi}^2 = \sum_{i=1}^5\frac{(O_i-np_i)^2}{np_i},$$
+ma rozkład $\chi^2$ z 4 stopniami swobody. 
 \begin{center}
  \textbf{Dyskretny test transformaty Fouriera}
 \end{center}
 
+Ten test opiera się na dyskretniej transformacie Fouriera, która zamienia ciąg $x_1,\dots,x_n$ w ciąg $a_1,\dots,a_n$ w sposób:
+$$a_k = \sum_{i=1}^nx_iw_n^{-(n-1)k},$$
+gdzie $w_n = e^{i\frac{2\pi}{n}}$
+
+Test ten bierze ciąg bitów, więc w naszym przykładie będziemy musieli zamienić nasz ciąg w takowy: mając ciąg liczb z przedziału $[0,1]$ zamieńmy liczby mniejsze od 0.5 w 0, a większe lub równe w 1. Nazwijmy ten ciąg bitów $X_1,\dots, X_n$. Teraz zamieńmy go w ciąg $Y_i = 2X_i-1$ i na ciąg $Y_1,\dots,Y_n$ zaaplikujmy dyskretną transformacię Fouriera otzrybując ciąg $S_1,\dots, S_n$. Teraz niech dla $i = 1,\dots, \frac{n}{2}$ mamy $M_i = |S_i|$. Można pokazać, że przy $H_0$ 95% wartości $M_i$ powinno być mniejsze od $T = \sqrt{\ln(\frac{1}{0.05})n}$.
+Niech $N_0 = 0.95\frac{n}{2}$, oczekiwana ilość wartości mniejszych niż $T$, a niech $N_1 = \#\{i:M_i<T\}$ to obserwowana ilośc. Licząc 
+$$d = \frac{N_1-N_0}{\sqrt{\frac{n*0.95*0.05}{4}}},$$
+możemy policzyć p_wartość ze wzoru $p_v = erfc(\frac{|d|}{\sqrt{2}})$
 \begin{center}
  \textbf{Second level testing}
 \end{center}
 
+Wyobraźmy sobie sytuację, że mamy generator, który za każdym razem zwraca przy testowaniu jego działania tę samą p-wartość, która jest większa niż poziom istotności, wtedy ten generator nie jest dobry, ponieważ generowanie przez niego bity(czyli też p-wartości) powinny być niezależne. Pamiętając o tym spostrzeżeniu, jak i o fakcie, że gdy $H_0$ jest prawdziwe, to rozkład p-wartości jest jednostwajny na $[0,1]$ możemy stworzyć nowy test nazwany second level testing: podzielny nasz ciąg bitów do testowania na $R$ mniejszych podciągów i każdy z nich przetestujmy otrzymując ciąg p_wattości, na których możemy przeprowadzić test $\chi^2$
 
+\begin{center} 
+ \textbf{Zadanie 1}
+\end{center}
+
+Teraz zobatrzmy jakie wyniki będą dawać nasze generatory dla różnych testów. Będziemy generować $k = 1000$ p-wartości, każda policzona z ciągu długości $n=1000$:
  
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(dane,aes(x = P.value,fill = Test,col = Test))+
@@ -191,42 +186,76 @@ ggplot(dane,aes(x = P.value,fill = Test,col = Test))+
         plot.subtitle = element_text(hjust = 0.5))+ 
   labs(title = "Histogtamy p_wartosci dla różnych testów",
        subtitle = "i różnych generatorów",
-       x="P_wartość",y="")
+       x="P_wartość",y="")+
+           labs(caption = "Wykres 1")
 ```
 
+Możemy zauważyć, że p-wartości testu pokerowego dla każdego generatora są bardzo skrajne: albo prawie równe 0 albo 1. Wynikać to może z tego, że losujemy wśród bardzo wielu liczb, ponieważ $M$ jest duże, więc szansa, że w 5-ciu liczbach będą dwie takie same, jest bardzo mała, co przy takiej próbie może dawać duże odchylenia. Kolejną obserwacją jest to, że p_wartości testu Furiera są bardzo dyskretne, tzn skupione w kilku punktach, to może być spowodowane małą próbką. JEśli chcemy porówanać wyniki generatorów, to wydaje się, że oba generatory Fibonaciego dają najlepsze wyniki, ale policzmy jeste p-wartości dla second level testing:
 
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
 kable(p_values_second)
 ```
 
+Z omówionych wyżej powodów testy pokerowy i Fouriera dają p-wartości praktycznie równe 0. A dla pozostałych testów najlepiej wypada generator Marsagli.
+
 \begin{center}
- \textbf{Project 2}
+ \textbf{Zadanie 2}
 \end{center}
  
+Teraz opiszmny inny sposób generowania liczb w sposób pseudolosowy: weźmy jakąś niewymierną liczbę rzeczywistą i rozpiszmy ją w nieskończonym rozwinięciu dwójkowym. Możemy podejrzewać, że taki ciąg będzie ciągiem niezależnych bitów. Sprawdzimy to na podstawie rozwinięć $\pi$,$e$ oraz $\sqrt{2}$ i testu monobit. Zaczniemy od wczytania pierwszego miliona cyfr każdej z tych liczb, następne te ciągi podzieliny na mniejsze ciągi długości $n = 1000$
+z każdy taki ciąg bitów $B^i_1,\dots,B^i_n$ zamieńmy na liczbę 
 
-
+$$S_i = \frac{1}{\sqrt{2}}\sum_{j=1}^nB_j^.$$
+Z CTG ciąg $S_i$ dąży do $N(0,1)$, więc możemy policzyć p-warość:
+$$p_i = 2(1-\phi(|S_i|)),$$
+gdzie $\phi$ to dystrybuanta rozkładu normalnego standardowego.
+Zobaczmy jak wyglądają histogramy tych p-wartości dla naszych liczb $\pi$,$e$ i $\sqrt{2}$:
 
  
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
 dane2<-read.csv('wyniki_zad2_n_1000.csv',header = T)
-r<-narysuj_zad_2(dane2)
+r1<-narysuj_zad_2(dane2,2)
 
-kable(r)
 ```
+ Widzimy, że liczby te mniej więcej rozkładają się jednostajnie na przedziale $[0,1]$, co mogłoby sugerować, że hipoteza o tym, że nasz początkowy ciąg bitów jest iid. jest prawdziwa, ale wykonajmy jeszcze second level testing i policzmy ich p-wartości:
+
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+kable(r1)
+```
+
+Wszytkie one są tak małe, że komputer uważa je za równe zero, przyczyną tego może być za mała liczba $n$, która sprawia, że rozkład $S_i$ nie jest jeszcze "blisko" rozkładu normalnemu, dlatego ustawmy $n= 5000$ i powtóżmy nasze obliczenia:
+
+
  
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
 dane2<-read.csv('wyniki_zad2_n_5000.csv',header = T)
-r<-narysuj_zad_2(dane2)
+r2<-narysuj_zad_2(dane2,3)
 
-kable(r)
 ```
 
+Widzimy, że tym razem rozkład tych p-wartości jest bardziej równomiernie równomiernie rozłożony, zobatrzmy jak to wpływa na second level testing i jego p-wartość:
+
+
+```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+kable(r2)
+```
+
+Tym razem w żadnym przypadku nie możemy odżucić $H_0$, lecz musimy pamiętać, że zwiększając $n$ mniejszamy ilość zmiennych $S_i$, co też wpływa na p_wartość. 
+
+\begin{center}
+ \textbf{Tabela wywoływania funkcji}
+\end{center}
+
+W tym projekcjie postanowiłem najpierw gererować liczby pseudolosowe i testować je "pierwszo poziomowo" w pythonie, później zapisywać wyniki w postaci .csv, a wykresy i second level testong przeprowadziać w R. Poniżej jest przedstwaiona tabela z nazwami funkcji, które zapisują dane to wykesu o danej nazwie.
  
 ```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
+do_zapisywania<-data.frame(matrix(ncol = 3,nrow = 3))
+colnames(do_zapisywania)<-c("nazwa pliku","nazwa funkcji","parametry")
+rownames(do_zapisywania)<-c("Wykres 1","Wykres 2","Wykres 3")
+do_zapisywania[1,]<-c("wyniki_zad1.csv","policz_i_zapisz_wyniki_zad1","n=1000,k=1000")
+do_zapisywania[2,]<-c("wyniki_zad2_n_1000.csv","read_numbers_and_save_p_values","n=1000")
+do_zapisywania[3,]<-c("wyniki_zad2_n_5000.csv","read_numbers_and_save_p_values","n=5000")
+kable(do_zapisywania)
 
 ```
-
-```{r, include=TRUE ,warning=FALSE, message=FALSE, echo=FALSE}
-
-```
-
